@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator Benzină</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: rgba(255,255,255,0.07);
+    --border-accent: rgba(220,30,30,0.4);
+    --red: #DC1E1E;
+    --red-dim: rgba(220,30,30,0.12);
+    --cyan: #00AACC;
+    --cyan-dim: rgba(0,170,204,0.1);
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --text-dim: #555;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 560px; margin: 0 auto; }
+
+  header { margin-bottom: 2.5rem; }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  header h1 span { color: var(--red); }
+  header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.4rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.2rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+  .field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    padding: 0.65rem 0.85rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--cyan); }
+  .field input::placeholder { color: var(--text-dim); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  .fuel-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface2);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+  }
+  .fuel-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .fuel-dot.live { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+  .fuel-dot.error { background: var(--red); }
+  .fuel-dot.loading { background: var(--cyan); }
+  .fuel-label { color: var(--text-muted); flex: 1; }
+  .fuel-price {
+    color: var(--cyan);
+    font-weight: 500;
+    font-size: 1.05rem;
+  }
+
+  .fuel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .fuel-option {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.65rem 0.5rem;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .fuel-option:hover { border-color: var(--border-accent); }
+  .fuel-option.selected {
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+  .fuel-option .station { font-size: 0.72rem; color: var(--text-muted); }
+  .fuel-option .price {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-top: 0.2rem;
+  }
+  .fuel-option.selected .price { color: var(--cyan); }
+
+  .btn-calc {
+    width: 100%;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.85rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-calc:hover { opacity: 0.88; }
+  .btn-calc:active { transform: scale(0.98); }
+  .btn-calc:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .result {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+  .result.show { display: block; }
+  .result-main {
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: -0.04em;
+    font-family: var(--mono);
+  }
+  .result-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+  .result-details {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .detail-item {}
+  .detail-item .d-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .detail-item .d-val {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .error-msg {
+    font-size: 0.8rem;
+    color: var(--red);
+    padding: 0.5rem 0;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    margin-left: auto;
+    transition: border-color 0.15s;
+  }
+  .refresh-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+  .status-row .card-title { margin-bottom: 0; }
+
+  footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+  footer a { color: var(--text-dim); text-decoration: none; }
+  footer a:hover { color: var(--cyan); }
+
+  @media (max-width: 400px) {
+    .fuel-grid { grid-template-columns: 1fr 1fr; }
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Calculator<br><span>Benzină</span></h1>
+    <p>Prețuri live de pe peco.ro · Calcul instant</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Rută</div>
+    <div class="field">
+      <label>Adresa A — Plecare</label>
+      <input type="text" id="addrA" placeholder="ex: Cluj-Napoca, Florești" />
+    </div>
+    <div class="field">
+      <label>Adresa B — Destinație</label>
+      <input type="text" id="addrB" placeholder="ex: București, Otopeni" />
+    </div>
+    <div class="row" style="margin-top: 0.75rem;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Distanță (km)</label>
+        <input type="number" id="distance" placeholder="ex: 450" min="1" />
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Consum (L/100km)</label>
+        <input type="number" id="consumption" placeholder="ex: 7.5" min="1" step="0.1" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="status-row">
+      <div class="card-title">Preț combustibil</div>
+      <button class="refresh-btn" onclick="loadPrices()">↻ Refresh</button>
+    </div>
+
+    <div class="fuel-status" id="fuelStatus">
+      <div class="fuel-dot loading" id="fuelDot"></div>
+      <span class="fuel-label" id="fuelLabel">Se încarcă prețurile...</span>
+      <span class="fuel-price" id="fuelPriceDisplay"></span>
+    </div>
+
+    <div class="fuel-grid" id="fuelGrid" style="display:none;"></div>
+
+    <div class="field" style="margin-top: 0.75rem;">
+      <label>Sau introdu manual (RON/L)</label>
+      <input type="number" id="manualPrice" placeholder="ex: 6.85" min="1" step="0.01" />
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <button class="btn-calc" onclick="calculate()">Calculează cost</button>
+
+  <div class="result" id="result">
+    <div class="result-label">Cost estimat total</div>
+    <div class="result-main" id="resultCost">—</div>
+    <div class="result-details">
+      <div class="detail-item">
+        <div class="d-label">Distanță</div>
+        <div class="d-val" id="rDistanta">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">Consum</div>
+        <div class="d-val" id="rConsum">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">Litri necesari</div>
+        <div class="d-val" id="rLitri">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">Preț / litru</div>
+        <div class="d-val" id="rPret">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">Dus-întors</div>
+        <div class="d-val" id="rDusIntors">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">Sursă preț</div>
+        <div class="d-val" id="rSursa">—</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Prețuri via <a href="https://peco.ro" target="_blank">peco.ro</a> · Calcul estimativ</p>
+  </footer>
+</div>
+
+<script>
+const WORKER_URL = 'https://fuel-prices.donceanstefan-media.workers.dev';
+
+let selectedPrice = null;
+let selectedStation = null;
+let pricesData = [];
+
+async function loadPrices() {
+  const dot = document.getElementById('fuelDot');
+  const label = document.getElementById('fuelLabel');
+  const display = document.getElementById('fuelPriceDisplay');
+  const grid = document.getElementById('fuelGrid');
+
+  dot.className = 'fuel-dot loading';
+  label.textContent = 'Se încarcă prețurile...';
+  display.textContent = '';
+  grid.style.display = 'none';
+  grid.innerHTML = '';
+  selectedPrice = null;
+  selectedStation = null;
+
+  try {
+    const res = await fetch(WORKER_URL);
+    if (!res.ok) throw new Error('Worker error ' + res.status);
+    const data = await res.json();
+
+    if (!data.prices || data.prices.length === 0) throw new Error('Niciun preț disponibil');
+
+    pricesData = data.prices;
+
+    dot.className = 'fuel-dot live';
+    label.textContent = 'Prețuri live · ' + new Date().toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'});
+    display.textContent = '';
+
+    grid.style.display = 'grid';
+    pricesData.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.className = 'fuel-option' + (i === 0 ? ' selected' : '');
+      el.innerHTML = `<div class="station">${item.station}</div><div class="price">${item.price.toFixed(2)} lei</div>`;
+      el.onclick = () => {
+        document.querySelectorAll('.fuel-option').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedPrice = item.price;
+        selectedStation = item.station;
+      };
+      grid.appendChild(el);
+      if (i === 0) { selectedPrice = item.price; selectedStation = item.station; }
+    });
+
+  } catch (err) {
+    dot.className = 'fuel-dot error';
+    label.textContent = 'Eroare la încărcare — folosește prețul manual';
+    display.textContent = '';
+    console.error(err);
+  }
+}
+
+function calculate() {
+  const errorEl = document.getElementById('errorMsg');
+  errorEl.className = 'error-msg';
+  errorEl.textContent = '';
+
+  const distVal = parseFloat(document.getElementById('distance').value);
+  const consVal = parseFloat(document.getElementById('consumption').value);
+  const manualVal = parseFloat(document.getElementById('manualPrice').value);
+
+  if (!distVal || distVal <= 0) {
+    showError('Introdu distanța în km.');
+    return;
+  }
+  if (!consVal || consVal <= 0) {
+    showError('Introdu consumul în L/100km.');
+    return;
+  }
+
+  let price = selectedPrice;
+  let sursa = selectedStation || '—';
+  if (manualVal && manualVal > 0) {
+    price = manualVal;
+    sursa = 'Manual';
+  }
+
+  if (!price || price <= 0) {
+    showError('Selectează un preț din lista de mai sus sau introdu manual.');
+    return;
+  }
+
+  const litri = (distVal / 100) * consVal;
+  const cost = litri * price;
+  const costDusIntors = cost * 2;
+
+  document.getElementById('resultCost').textContent = cost.toFixed(2) + ' RON';
+  document.getElementById('rDistanta').textContent = distVal.toFixed(0) + ' km';
+  document.getElementById('rConsum').textContent = consVal.toFixed(1) + ' L/100km';
+  document.getElementById('rLitri').textContent = litri.toFixed(2) + ' L';
+  document.getElementById('rPret').textContent = price.toFixed(2) + ' RON/L';
+  document.getElementById('rDusIntors').textContent = costDusIntors.toFixed(2) + ' RON';
+  document.getElementById('rSursa').textContent = sursa;
+
+  document.getElementById('result').className = 'result show';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.className = 'error-msg show';
+}
+
+loadPrices();
+</script>
+</body>
+</html>
